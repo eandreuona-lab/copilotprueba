@@ -4,11 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Dashboard de Ocupaciones – RN & PAX</title>
-https://cdn.jsdelivr.net
-<style>
-  :root{
-    --azul:#0c2b4b; --azul-suave:#1c3f63; --dorado:#c9a063; --bg:#f5f6fa; --card:#ffffff;
-  }
+<link rel="preconnect" href="https://cdn.jsdelivr#0c2b4b; --azul-suave:#1c3f63; --dorado:#c9a063; --bg:#f5f6fa; --card:#ffffff; }
   *{box-sizing:border-box}
   body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:#233}
   header{background:var(--azul);color:#fff;padding:22px 16px}
@@ -36,19 +32,19 @@ https://cdn.jsdelivr.net
   .filters{display:flex;gap:10px;flex-wrap:wrap}
   .filter-chip{background:#eef3ff;border:1px solid #dde6ff;color:#10305f;border-radius:999px;padding:6px 10px;font-size:12px}
   .hidden{display:none}
+  .err{color:#a40000}
 </style>
 </head>
 <body>
 <header>
   <h1>Dashboard de Ocupaciones – RN & PAX</h1>
-  <p>Carga automática de <strong>OCUPACIONES.xlsx</strong> desde el repositorio. Estructura esperada: <code>Month_Name</code>, <code>Complejo</code>, <code>RN</code>, <code>PAX</code>. <!-- columnas comprobadas en tu fichero --> </p>
+  <p>Carga automática de <strong>OCUPACIONES.xlsx</strong> desde el repositorio. Estructura esperada: <code>Month_Name</code>, <code>Complejo</code>, <code>RN</code>, <code>PAX</code>.</p>
 </header>
 
 <div class="wrap">
-
-  <!-- ESTADO DE CARGA -->
+  <!-- ESTADO -->
   <div class="card">
-    <div id="status" class="status">Cargando datos desde <code>OCUPACIONES.xlsx</code>…</div>
+    <div id="status" class="status">Inicializando…</div>
   </div>
 
   <!-- FILTROS -->
@@ -108,12 +104,24 @@ https://cdn.jsdelivr.net
     </div>
   </div>
 
-  <div class="muted">© ONA Hotels · Herramienta interna de análisis — generado por M365 Copilot</div>
+  <div class="muted">© ONA Hotels · Herramienta interna de análisis — M365 Copilot</div>
 </div>
 
-<!-- Librerías -->
-https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js</script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.t.umd.min.js</script>
+<!-- Librerías con fallback -->
+<script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsxt>
+<script defer src="https://cdn.jsdelivr.net/npm/chartt.umd.min.js</script>
+
+<script>
+  function fallbackLib(which){
+    // Carga fallback si la primera CDN falla
+    const s = document.createElement('script');
+    s.defer = true;
+    s.src = which === 'xlsx'
+      ? 'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js'
+      : 'https://unpkg.com/chart.js@4.4.1/dist/chart.umd.min.js';
+    document.head.appendChild(s);
+  }
+</script>
 
 <script>
   // ======= ESTADO GLOBAL =======
@@ -124,111 +132,148 @@ https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js</script>
 
   const el = (id) => document.getElementById(id);
   const show = (id) => el(id).classList.remove('hidden');
+  const setStatus = (msg, isErr=false) => { el('status').innerHTML = (isErr? '<span class="err">❌</span> ' : '✅ ') + msg; };
 
-  // ======= CARGA AUTOMÁTICA DEL XLSX DESDE EL REPO =======
-  document.addEventListener('DOMContentLoaded', async () => {
-    try {
-      const url = 'OCUPACIONES.xlsx'; // Debe existir en la misma carpeta del index.html
-      const status = el('status');
-      status.textContent = 'Descargando OCUACIONES.xlsx…';
+  // ======= ARRANQUE ROBUSTO =======
+  document.addEventListener('DOMContentLoaded', start);
 
-      const res = await fetch(url);
-      if(!res.ok) throw new Error('No se pudo descargar el archivo (' + res.status + ')');
+  async function start(){
+    try{
+      setStatus('Comprobando librerías…');
+      await ensureLibs();
+      setStatus('Descargando <code>OCUPACIONES.xlsx</code>…');
 
-      status.textContent = 'Leyendo Excel…';
-      const ab = await res.arrayBuffer();
-      const wb = XLSX.read(ab, {type:'array'});
-      const sh = wb.Sheets[wb.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json(sh, {defval:null});
+      const data = await loadExcelFromRepo();
+      if(!data || !data.length) throw new Error('El Excel se leyó pero no contenía filas.');
 
-      // Normalización a las 4 columnas esperadas (Month_Name, Complejo, RN, PAX)
-      raw = json.map(r => ({
-        Month_Name: String(r['Month_Name'] ?? r['Mes'] ?? r['month'] ?? '').trim(),
-        Complejo:   String(r['Complejo']   ?? r['Hotel'] ?? r['Property'] ?? '').trim(),
-        RN:   Number(r['RN']   ?? r['RN Totales'] ?? r['RoomNights'] ?? 0) || 0,
-        PAX:  Number(r['PAX']  ?? r['Pax']        ?? r['Guests']     ?? 0) || 0
-      })).filter(r => r.Month_Name && r.Complejo);
-
-      status.textContent = `Datos cargados: ${raw.length.toLocaleString('es-ES')} filas.`;
-
-      // Construye UI
+      raw = normalize(data);
+      setStatus(`Datos cargados: ${raw.length.toLocaleString('es-ES')} filas.`);
       buildFilters();
       applyFilters();
-
-      // Muestra tarjetas
       show('filtrosCard'); show('kpisCard'); show('chartsCard'); show('rankingCard');
 
-    } catch(err) {
-      el('status').innerHTML = '❌ Error al cargar <code>OCUPACIONES.xlsx</code>: ' + (err.message || err);
+    }catch(err){
+      console.error(err);
+      setStatus('No se pudo cargar el Excel. Cargando dataset de demostración para verificar la UI…', true);
+      // DEMO: para que la interfaz funcione aunque el Excel falle
+      raw = normalize([
+        {Month_Name:'Enero',   Complejo:'Hotel Alfa', RN:1200, PAX:2400},
+        {Month_Name:'Enero',   Complejo:'Hotel Beta', RN:900,  PAX:1600},
+        {Month_Name:'Febrero', Complejo:'Hotel Alfa', RN:1500, PAX:2800},
+        {Month_Name:'Febrero', Complejo:'Hotel Beta', RN:800,  PAX:1400},
+        {Month_Name:'Marzo',   Complejo:'Hotel Alfa', RN:1700, PAX:3200},
+        {Month_Name:'Marzo',   Complejo:'Hotel Beta', RN:950,  PAX:1700}
+      ]);
+      buildFilters(); applyFilters();
+      show('filtrosCard'); show('kpisCard'); show('chartsCard'); show('rankingCard');
+      el('status').insertAdjacentHTML('beforeend', '<div class="muted">Revisa que <code>OCUPACIONES.xlsx</code> esté en la MISMA carpeta que el <code>index.html</code> y con el nombre exacto (mayúsculas incluidas).</div>');
     }
-  });
+  }
 
-  // ======= FILTROS =======
-  const selMeses = el('selMeses');
-  const selHoteles = el('selHoteles');
-  el('btnReset').addEventListener('click', () => {
+  function ensureLibs(){
+    return new Promise((resolve, reject)=>{
+      const started = Date.now();
+      (function waitLibs(){
+        const ok = (window.XLSX && window.Chart);
+        if(ok) return resolve();
+        if(Date.now() - started > 8000) return reject(new Error('Timeout cargando librerías (XLSX/Chart).'));
+        setTimeout(waitLibs, 150);
+      })();
+    });
+  }
+
+  async function loadExcelFromRepo(){
+    // Prueba varias rutas para cubrir GitHub Pages en raíz y en /docs
+    const basePath = location.pathname.endsWith('/') ? location.pathname : location.pathname.replace(/[^/]+$/, '');
+    const candidates = [
+      `${basePath}OCUPACIONES.xlsx`,
+      `./OCUPACIONES.xlsx`,
+      `/OCUPACIONES.xlsx`
+    ];
+
+    let lastErr;
+    for(const url of candidates){
+      try{
+        console.log('Intentando fetch:', url);
+        const res = await fetch(url, {cache:'no-store'});
+        if(!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+        const ab = await res.arrayBuffer();
+        const wb = XLSX.read(ab, {type:'array'});
+        const sh = wb.Sheets[wb.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(sh, {defval:null});
+        return json;
+      }catch(e){
+        lastErr = e;
+        console.warn('Fallo leyendo', url, e);
+      }
+    }
+    throw lastErr || new Error('No se pudo localizar OCU… perdón, OCUPACIONES.xlsx');
+  }
+
+  function normalize(rows){
+    return rows.map(r => ({
+      Month_Name: String(r['Month_Name'] ?? r['Mes'] ?? r['month'] ?? '').trim(),
+      Complejo:   String(r['Complejo']   ?? r['Hotel'] ?? r['Property'] ?? '').trim(),
+      RN:   Number(r['RN']   ?? r['RN Totales'] ?? r['RoomNights'] ?? 0) || 0,
+      PAX:  Number(r['PAX']  ?? r['Pax']        ?? r['Guests']     ?? 0) || 0
+    })).filter(r => r.Month_Name && r.Complejo);
+  }
+
+  // ======= FILTROS / KPIs =======
+  const selMeses = document.getElementById('selMeses');
+  const selHoteles = document.getElementById('selHoteles');
+  document.getElementById('btnReset').addEventListener('click', () => {
     selMeses.selectedIndex = -1; selHoteles.selectedIndex = -1; applyFilters();
   });
-
   selMeses.addEventListener('change', applyFilters);
   selHoteles.addEventListener('change', applyFilters);
 
   function buildFilters(){
-    // Meses (orden natural)
     selMeses.innerHTML = '';
     MESES_ORD.forEach(m => {
-      const opt = document.createElement('option');
-      opt.value = m; opt.textContent = m; selMeses.appendChild(opt);
+      const opt = document.createElement('option'); opt.value=m; opt.textContent=m; selMeses.appendChild(opt);
     });
-
-    // Hoteles (alfabético) – sin deduplicar 'Total' porque ya no estará en ranking
     selHoteles.innerHTML = '';
     const hoteles = [...new Set(raw.map(r => r.Complejo))].sort((a,b)=>a.localeCompare(b,'es'));
-    hoteles.forEach(h => {
-      const opt = document.createElement('option');
-      opt.value = h; opt.textContent = h; selHoteles.appendChild(opt);
-    });
+    hoteles.forEach(h => { const o=document.createElement('option'); o.value=h; o.textContent=h; selHoteles.appendChild(o); });
   }
 
-  function getSelectedValues(sel){
-    return Array.from(sel.selectedOptions).map(o => o.value);
-  }
+  function getSelectedValues(sel){ return Array.from(sel.selectedOptions).map(o => o.value); }
 
   function applyFilters(){
     const meses = getSelectedValues(selMeses);
     const hoteles = getSelectedValues(selHoteles);
-
-    filtered = raw.filter(r =>
+    const data = raw.filter(r =>
       (meses.length   ? meses.includes(r.Month_Name) : true) &&
       (hoteles.length ? hoteles.includes(r.Complejo) : true)
     );
 
+    filtered = data; // para exportaciones
     renderChips(meses, hoteles);
-    updateKPIs();
-    updateCharts();
-    renderRanking();
+    updateKPIs(data);
+    updateCharts(data);
+    renderRanking(data);
   }
 
   function renderChips(meses, hoteles){
-    const div = el('chips');
+    const div = document.getElementById('chips');
     const chips = [];
     if(meses.length) chips.push(`<span class="filter-chip">Meses: ${meses.join(', ')}</span>`);
     if(hoteles.length) chips.push(`<span class="filter-chip">Hoteles: ${hoteles.slice(0,6).join(', ')}${hoteles.length>6?'…':''}</span>`);
     div.innerHTML = chips.join('');
   }
 
-  // ======= KPI / AGRUPACIONES =======
   const sum = (arr, key) => arr.reduce((a,b)=>a+(b[key]||0),0);
 
-  function updateKPIs(){
-    const rn = sum(filtered,'RN');
-    const px = sum(filtered,'PAX');
+  function updateKPIs(data){
+    const rn = sum(data,'RN');
+    const px = sum(data,'PAX');
     const pr = rn ? (px/rn) : 0;
-    const nHoteles = new Set(filtered.map(r => r.Complejo)).size;
-    el('kpiRN').textContent = rn.toLocaleString('es-ES');
-    el('kpiPAX').textContent = px.toLocaleString('es-ES');
-    el('kpiPR').textContent = pr.toFixed(2);
-    el('kpiN').textContent = nHoteles;
+    const nHoteles = new Set(data.map(r => r.Complejo)).size;
+    document.getElementById('kpiRN').textContent = rn.toLocaleString('es-ES');
+    document.getElementById('kpiPAX').textContent = px.toLocaleString('es-ES');
+    document.getElementById('kpiPR').textContent = pr.toFixed(2);
+    document.getElementById('kpiN').textContent = nHoteles;
   }
 
   function groupByMonth(data){
@@ -250,15 +295,14 @@ https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js</script>
       if(!map.has(k)) map.set(k, {Hotel:k, RN:0, PAX:0});
       const o = map.get(k); o.RN += r.RN; o.PAX += r.PAX;
     });
-    // Excluir los 'Total' del ranking por hotel
     const rows = Array.from(map.values()).filter(x => x.Hotel.toLowerCase() !== 'total');
     rows.sort((a,b)=> b.RN - a.RN);
     return rows;
   }
 
   // ======= GRÁFICOS =======
-  function updateCharts(){
-    const byM = groupByMonth(filtered);
+  function updateCharts(data){
+    const byM = groupByMonth(data);
     const labels = byM.map(d=>d.Month_Name);
     const dsRN = byM.map(d=>d.RN);
     const dsP  = byM.map(d=>d.PAX);
@@ -274,7 +318,7 @@ https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js</script>
       options:{ responsive:true, plugins:{legend:{position:'bottom'}}, scales:{ y:{beginAtZero:true} } }
     });
 
-    const byH = groupByHotel(filtered).slice(0,10);
+    const byH = groupByHotel(data).slice(0,10);
     const ctx2 = document.getElementById('chartTop');
     if(chartTop) chartTop.destroy();
     chartTop = new Chart(ctx2, {
@@ -288,9 +332,9 @@ https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js</script>
   }
 
   // ======= RANKING =======
-  function renderRanking(){
+  function renderRanking(data){
     const tbody = document.querySelector('#tblRanking tbody');
-    const rows = groupByHotel(filtered);
+    const rows = groupByHotel(data);
     tbody.innerHTML = rows.map((r,i)=>(
       `<tr>
         <td>${i+1}</td>
@@ -303,19 +347,19 @@ https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js</script>
   }
 
   // ======= EXPORTACIONES =======
-  el('btnCsv').addEventListener('click', downloadCSV);
-  el('btnXlsx').addEventListener('click', downloadXLSX);
+  document.getElementById('btnCsv').addEventListener('click', ()=>downloadCSV(filtered));
+  document.getElementById('btnXlsx').addEventListener('click', ()=>downloadXLSX(filtered));
 
-  function downloadCSV(){
-    const rows = filtered.map(r=>({Mes:r.Month_Name, Hotel:r.Complejo, RN:r.RN, PAX:r.PAX, PAX_por_RN: (r.PAX/(r.RN||1)).toFixed(2)}));
+  function downloadCSV(data){
+    const rows = data.map(r=>({Mes:r.Month_Name, Hotel:r.Complejo, RN:r.RN, PAX:r.PAX, PAX_por_RN: (r.PAX/(r.RN||1)).toFixed(2)}));
     const header = Object.keys(rows[0] || {Mes:'',Hotel:'',RN:'',PAX:'',PAX_por_RN:''}).join(',');
     const body = rows.map(r=>Object.values(r).join(',')).join('\n');
     const blob = new Blob([header+'\n'+body], {type:'text/csv;charset=utf-8;'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'ocupaciones_filtrado.csv'; a.click();
   }
 
-  function downloadXLSX(){
-    const rows = filtered.map(r=>({Mes:r.Month_Name, Hotel:r.Complejo, RN:r.RN, PAX:r.PAX, PAX_por_RN: Number((r.PAX/(r.RN||1)).toFixed(2))}));
+  function downloadXLSX(data){
+    const rows = data.map(r=>({Mes:r.Month_Name, Hotel:r.Complejo, RN:r.RN, PAX:r.PAX, PAX_por_RN: Number((r.PAX/(r.RN||1)).toFixed(2))}));
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(rows);
     XLSX.utils.book_append_sheet(wb, ws, 'Filtrado');
@@ -323,7 +367,7 @@ https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js</script>
   }
 
   // Utilidad
-  function escapeHtml(s){ return s.replace(/[&<>\"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;','\\'':'&#39;'}[c])); }
+  function escapeHtml(s){ return String(s||'').replace(/[&<>\"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;','\\'':'&#39;'}[c])); }
 </script>
 </body>
 </html>
