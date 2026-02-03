@@ -20,9 +20,10 @@ https://cdn.jsdelivr.net
   .row{display:flex;gap:16px;flex-wrap:wrap}
   .col{flex:1 1 260px}
   label{display:block;font-weight:600;color:var(--azul-suave);margin:8px 0 6px}
-  input[type=file],select,button{width:100%;padding:10px 12px;border:1px solid #ccd;border-radius:10px;background:#fff}
+  select,button{width:100%;padding:10px 12px;border:1px solid #ccd;border-radius:10px;background:#fff}
   button{background:var(--azul);color:#fff;border:none;cursor:pointer;font-weight:600}
   button:hover{background:var(--dorado);color:var(--azul)}
+  .status{padding:10px 12px;border-radius:10px;background:#eef3ff;border:1px solid #dde6ff;color:#10305f}
   .kpis{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px}
   .kpi{background:#0c2b4b08;border-left:5px solid var(--azul);border-radius:10px;padding:12px 14px}
   .kpi h3{margin:0;color:var(--azul-suave);font-size:13px;text-transform:uppercase;letter-spacing:.5px}
@@ -32,30 +33,27 @@ https://cdn.jsdelivr.net
   th,td{padding:8px 10px;border-bottom:1px solid #eee}
   th{background:#fafafa;text-align:left}
   .muted{opacity:.75}
-  .pill{display:inline-block;background:#eef;border-radius:999px;padding:4px 10px;margin-right:6px}
-  .footer{font-size:12px;color:#456;opacity:.8;margin-top:8px}
   .filters{display:flex;gap:10px;flex-wrap:wrap}
   .filter-chip{background:#eef3ff;border:1px solid #dde6ff;color:#10305f;border-radius:999px;padding:6px 10px;font-size:12px}
+  .hidden{display:none}
 </style>
 </head>
 <body>
 <header>
   <h1>Dashboard de Ocupaciones – RN & PAX</h1>
-  <p>Carga el Excel (estructura: Month_Name, Complejo, RN Totales, PAX) y explora por hotel/mes con gráficos y rankings.</p>
+  <p>Carga automática de <strong>OCUPACIONES.xlsx</strong> desde el repositorio. Estructura esperada: <code>Month_Name</code>, <code>Complejo</code>, <code>RN</code>, <code>PAX</code>. <!-- columnas comprobadas en tu fichero --> </p>
 </header>
 
 <div class="wrap">
+
+  <!-- ESTADO DE CARGA -->
   <div class="card">
-    <h2>1) Cargar datos</h2>
-    <div class="row">
-      <div class="col"><label>Archivo Excel (.xlsx)</label><input type="file" id="file" accept=".xlsx,.xls" /></div>
-      <div class="col"><label>&nbsp;</label><button id="btnDemo" title="Usa un subconjunto de ejemplo para probar">Cargar demo</button></div>
-    </div>
-    <div class="footer">Tu archivo no se sube a ningún servidor: el procesamiento se hace 100% en tu navegador.</div>
+    <div id="status" class="status">Cargando datos desde <code>OCUPACIONES.xlsx</code>…</div>
   </div>
 
-  <div class="card">
-    <h2>2) Filtros</h2>
+  <!-- FILTROS -->
+  <div class="card hidden" id="filtrosCard">
+    <h2>1) Filtros</h2>
     <div class="row">
       <div class="col">
         <label>Meses</label>
@@ -73,8 +71,9 @@ https://cdn.jsdelivr.net
     <div id="chips" class="filters" style="margin-top:10px"></div>
   </div>
 
-  <div class="card">
-    <h2>3) KPIs</h2>
+  <!-- KPIS -->
+  <div class="card hidden" id="kpisCard">
+    <h2>2) KPIs</h2>
     <div class="kpis">
       <div class="kpi"><h3>RN Totales</h3><div class="v" id="kpiRN">–</div></div>
       <div class="kpi"><h3>PAX Totales</h3><div class="v" id="kpiPAX">–</div></div>
@@ -83,16 +82,18 @@ https://cdn.jsdelivr.net
     </div>
   </div>
 
-  <div class="card">
-    <h2>4) Gráficos</h2>
+  <!-- GRÁFICOS -->
+  <div class="card hidden" id="chartsCard">
+    <h2>3) Gráficos</h2>
     <div class="row">
       <div class="col"><canvas id="chartMeses"></canvas></div>
       <div class="col"><canvas id="chartTop"></canvas></div>
     </div>
   </div>
 
-  <div class="card">
-    <h2>5) Ranking por hotel</h2>
+  <!-- RANKING -->
+  <div class="card hidden" id="rankingCard">
+    <h2>4) Ranking por hotel</h2>
     <div style="overflow:auto">
       <table id="tblRanking">
         <thead>
@@ -107,155 +108,170 @@ https://cdn.jsdelivr.net
     </div>
   </div>
 
-  <div class="footer muted">© ONA Hotels · Herramienta interna de análisis — generado por M365 Copilot</div>
+  <div class="muted">© ONA Hotels · Herramienta interna de análisis — generado por M365 Copilot</div>
 </div>
 
+<!-- Librerías -->
 https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js</script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4rt.umd.min.js</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.t.umd.min.js</script>
+
 <script>
-  // Estado global
-  let raw = [];
-  let filtered = [];
+  // ======= ESTADO GLOBAL =======
+  let raw = [];        // Datos completos (incluye filas 'Total')
+  let filtered = [];   // Datos filtrados (por mes/hotel)
   let chartMeses, chartTop;
   const MESES_ORD = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-  document.getElementById('file').addEventListener('change', handleFile);
-  document.getElementById('btnDemo').addEventListener('click', loadDemo);
-  document.getElementById('btnReset').addEventListener('click', ()=>{ selMeses.selectedIndex=-1; selHoteles.selectedIndex=-1; applyFilters(); });
-  document.getElementById('btnCsv').addEventListener('click', downloadCSV);
-  document.getElementById('btnXlsx').addEventListener('click', downloadXLSX);
+  const el = (id) => document.getElementById(id);
+  const show = (id) => el(id).classList.remove('hidden');
 
-  const selMeses = document.getElementById('selMeses');
-  const selHoteles = document.getElementById('selHoteles');
+  // ======= CARGA AUTOMÁTICA DEL XLSX DESDE EL REPO =======
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const url = 'OCUPACIONES.xlsx'; // Debe existir en la misma carpeta del index.html
+      const status = el('status');
+      status.textContent = 'Descargando OCUACIONES.xlsx…';
+
+      const res = await fetch(url);
+      if(!res.ok) throw new Error('No se pudo descargar el archivo (' + res.status + ')');
+
+      status.textContent = 'Leyendo Excel…';
+      const ab = await res.arrayBuffer();
+      const wb = XLSX.read(ab, {type:'array'});
+      const sh = wb.Sheets[wb.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(sh, {defval:null});
+
+      // Normalización a las 4 columnas esperadas (Month_Name, Complejo, RN, PAX)
+      raw = json.map(r => ({
+        Month_Name: String(r['Month_Name'] ?? r['Mes'] ?? r['month'] ?? '').trim(),
+        Complejo:   String(r['Complejo']   ?? r['Hotel'] ?? r['Property'] ?? '').trim(),
+        RN:   Number(r['RN']   ?? r['RN Totales'] ?? r['RoomNights'] ?? 0) || 0,
+        PAX:  Number(r['PAX']  ?? r['Pax']        ?? r['Guests']     ?? 0) || 0
+      })).filter(r => r.Month_Name && r.Complejo);
+
+      status.textContent = `Datos cargados: ${raw.length.toLocaleString('es-ES')} filas.`;
+
+      // Construye UI
+      buildFilters();
+      applyFilters();
+
+      // Muestra tarjetas
+      show('filtrosCard'); show('kpisCard'); show('chartsCard'); show('rankingCard');
+
+    } catch(err) {
+      el('status').innerHTML = '❌ Error al cargar <code>OCUPACIONES.xlsx</code>: ' + (err.message || err);
+    }
+  });
+
+  // ======= FILTROS =======
+  const selMeses = el('selMeses');
+  const selHoteles = el('selHoteles');
+  el('btnReset').addEventListener('click', () => {
+    selMeses.selectedIndex = -1; selHoteles.selectedIndex = -1; applyFilters();
+  });
+
   selMeses.addEventListener('change', applyFilters);
   selHoteles.addEventListener('change', applyFilters);
 
-  function handleFile(evt){
-    const file = evt.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = (e)=>{
-      const data = new Uint8Array(e.target.result);
-      const wb = XLSX.read(data, {type:'array'});
-      const sh = wb.Sheets[wb.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json(sh, {defval:null});
-      ingest(json);
-    };
-    reader.readAsArrayBuffer(file);
-  }
-
-  function loadDemo(){
-    // Subconjunto artificial para probar interfaz
-    const demo = [
-      {Month_Name:'Enero', Complejo:'Hotel Alfa', 'RN Totales':1200, PAX:2400},
-      {Month_Name:'Enero', Complejo:'Hotel Beta', 'RN Totales':900, PAX:1600},
-      {Month_Name:'Febrero', Complejo:'Hotel Alfa', 'RN Totales':1500, PAX:2800},
-      {Month_Name:'Febrero', Complejo:'Hotel Beta', 'RN Totales':800, PAX:1400},
-      {Month_Name:'Marzo', Complejo:'Hotel Alfa', 'RN Totales':1700, PAX:3200},
-      {Month_Name:'Marzo', Complejo:'Hotel Beta', 'RN Totales':950, PAX:1700}
-    ];
-    ingest(demo);
-  }
-
-  function normalizeRow(r){
-    // Asegura nombres de columnas esperados y tipos numéricos
-    const row = {
-      Month_Name: String(r['Month_Name'] ?? r['Mes'] ?? r['month'] ?? '').trim(),
-      Complejo: String(r['Complejo'] ?? r['Hotel'] ?? r['Property'] ?? '').trim(),
-      RN: Number(r['RN Totales'] ?? r['RN'] ?? r['RoomNights'] ?? 0) || 0,
-      PAX: Number(r['PAX'] ?? r['Pax'] ?? r['Guests'] ?? 0) || 0,
-    };
-    return row;
-  }
-
-  function ingest(rows){
-    // Limpieza: mapea columnas, quita filas Total, quita vacíos
-    raw = rows.map(normalizeRow)
-             .filter(r => r.Month_Name && r.Complejo && r.Complejo.toLowerCase() !== 'total');
-    buildFilters();
-    applyFilters();
-  }
-
   function buildFilters(){
-    // Meses
+    // Meses (orden natural)
     selMeses.innerHTML = '';
-    MESES_ORD.forEach(m=>{
-      const opt = document.createElement('option'); opt.value=m; opt.textContent=m; selMeses.appendChild(opt);
+    MESES_ORD.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m; opt.textContent = m; selMeses.appendChild(opt);
     });
-    // Hoteles
+
+    // Hoteles (alfabético) – sin deduplicar 'Total' porque ya no estará en ranking
     selHoteles.innerHTML = '';
-    const hoteles = [...new Set(raw.map(r=>r.Complejo))].sort((a,b)=>a.localeCompare(b,'es'));
-    hoteles.forEach(h=>{ const o=document.createElement('option'); o.value=h; o.textContent=h; selHoteles.appendChild(o); });
+    const hoteles = [...new Set(raw.map(r => r.Complejo))].sort((a,b)=>a.localeCompare(b,'es'));
+    hoteles.forEach(h => {
+      const opt = document.createElement('option');
+      opt.value = h; opt.textContent = h; selHoteles.appendChild(opt);
+    });
   }
 
   function getSelectedValues(sel){
-    return Array.from(sel.selectedOptions).map(o=>o.value);
+    return Array.from(sel.selectedOptions).map(o => o.value);
   }
 
   function applyFilters(){
     const meses = getSelectedValues(selMeses);
     const hoteles = getSelectedValues(selHoteles);
-    filtered = raw.filter(r => (meses.length? meses.includes(r.Month_Name):true)
-                           && (hoteles.length? hoteles.includes(r.Complejo):true));
+
+    filtered = raw.filter(r =>
+      (meses.length   ? meses.includes(r.Month_Name) : true) &&
+      (hoteles.length ? hoteles.includes(r.Complejo) : true)
+    );
+
     renderChips(meses, hoteles);
     updateKPIs();
     updateCharts();
     renderRanking();
   }
 
-  function renderChips(meses,hoteles){
-    const div = document.getElementById('chips');
+  function renderChips(meses, hoteles){
+    const div = el('chips');
     const chips = [];
     if(meses.length) chips.push(`<span class="filter-chip">Meses: ${meses.join(', ')}</span>`);
     if(hoteles.length) chips.push(`<span class="filter-chip">Hoteles: ${hoteles.slice(0,6).join(', ')}${hoteles.length>6?'…':''}</span>`);
     div.innerHTML = chips.join('');
   }
 
-  function sum(arr, key){ return arr.reduce((a,b)=>a+(b[key]||0),0); }
+  // ======= KPI / AGRUPACIONES =======
+  const sum = (arr, key) => arr.reduce((a,b)=>a+(b[key]||0),0);
 
   function updateKPIs(){
     const rn = sum(filtered,'RN');
     const px = sum(filtered,'PAX');
-    const pr = rn? (px/rn): 0;
-    const nHoteles = new Set(filtered.map(r=>r.Complejo)).size;
-    document.getElementById('kpiRN').textContent = rn.toLocaleString('es-ES');
-    document.getElementById('kpiPAX').textContent = px.toLocaleString('es-ES');
-    document.getElementById('kpiPR').textContent = pr.toFixed(2);
-    document.getElementById('kpiN').textContent = nHoteles;
+    const pr = rn ? (px/rn) : 0;
+    const nHoteles = new Set(filtered.map(r => r.Complejo)).size;
+    el('kpiRN').textContent = rn.toLocaleString('es-ES');
+    el('kpiPAX').textContent = px.toLocaleString('es-ES');
+    el('kpiPR').textContent = pr.toFixed(2);
+    el('kpiN').textContent = nHoteles;
   }
 
   function groupByMonth(data){
     const map = new Map();
-    data.forEach(r=>{
-      const k = r.Month_Name; if(!map.has(k)) map.set(k,{Month_Name:k,RN:0,PAX:0});
+    data.forEach(r => {
+      const k = r.Month_Name;
+      if(!map.has(k)) map.set(k, {Month_Name:k, RN:0, PAX:0});
       const o = map.get(k); o.RN += r.RN; o.PAX += r.PAX;
     });
-    return Array.from(map.values()).sort((a,b)=>MESES_ORD.indexOf(a.Month_Name)-MESES_ORD.indexOf(b.Month_Name));
+    return Array.from(map.values()).sort(
+      (a,b) => MESES_ORD.indexOf(a.Month_Name) - MESES_ORD.indexOf(b.Month_Name)
+    );
   }
 
   function groupByHotel(data){
     const map = new Map();
-    data.forEach(r=>{
-      const k = r.Complejo; if(!map.has(k)) map.set(k,{Hotel:k,RN:0,PAX:0});
+    data.forEach(r => {
+      const k = r.Complejo;
+      if(!map.has(k)) map.set(k, {Hotel:k, RN:0, PAX:0});
       const o = map.get(k); o.RN += r.RN; o.PAX += r.PAX;
     });
-    return Array.from(map.values()).sort((a,b)=>b.RN-a.RN);
+    // Excluir los 'Total' del ranking por hotel
+    const rows = Array.from(map.values()).filter(x => x.Hotel.toLowerCase() !== 'total');
+    rows.sort((a,b)=> b.RN - a.RN);
+    return rows;
   }
 
+  // ======= GRÁFICOS =======
   function updateCharts(){
     const byM = groupByMonth(filtered);
     const labels = byM.map(d=>d.Month_Name);
     const dsRN = byM.map(d=>d.RN);
-    const dsP = byM.map(d=>d.PAX);
+    const dsP  = byM.map(d=>d.PAX);
+
     const ctx1 = document.getElementById('chartMeses');
     if(chartMeses) chartMeses.destroy();
     chartMeses = new Chart(ctx1, {
       type:'line',
       data:{ labels, datasets:[
         {label:'RN', data:dsRN, borderColor:'#0c2b4b', backgroundColor:'rgba(12,43,75,.08)', tension:.25, fill:true},
-        {label:'PAX', data:dsP, borderColor:'#c9a063', backgroundColor:'rgba(201,160,99,.10)', tension:.25, fill:true}
+        {label:'PAX', data:dsP,  borderColor:'#c9a063', backgroundColor:'rgba(201,160,99,.10)', tension:.25, fill:true}
       ]},
-      options:{ responsive:true, plugins:{legend:{position:'bottom'}}, scales:{ y:{beginAtZero:true}} }
+      options:{ responsive:true, plugins:{legend:{position:'bottom'}}, scales:{ y:{beginAtZero:true} } }
     });
 
     const byH = groupByHotel(filtered).slice(0,10);
@@ -264,22 +280,35 @@ https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js</script>
     chartTop = new Chart(ctx2, {
       type:'bar',
       data:{ labels: byH.map(d=>d.Hotel), datasets:[
-        {label:'RN', data: byH.map(d=>d.RN), backgroundColor:'#0c2b4b'},
+        {label:'RN',  data: byH.map(d=>d.RN),  backgroundColor:'#0c2b4b'},
         {label:'PAX', data: byH.map(d=>d.PAX), backgroundColor:'#c9a063'}
       ]},
       options:{ indexAxis:'y', responsive:true, plugins:{legend:{position:'bottom'}}, scales:{x:{beginAtZero:true}} }
     });
   }
 
+  // ======= RANKING =======
   function renderRanking(){
     const tbody = document.querySelector('#tblRanking tbody');
     const rows = groupByHotel(filtered);
-    tbody.innerHTML = rows.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.Hotel)}</td><td>${r.RN.toLocaleString('es-ES')}</td><td>${r.PAX.toLocaleString('es-ES')}</td><td>${(r.PAX/(r.RN||1)).toFixed(2)}</td></tr>`).join('');
+    tbody.innerHTML = rows.map((r,i)=>(
+      `<tr>
+        <td>${i+1}</td>
+        <td>${escapeHtml(r.Hotel)}</td>
+        <td>${r.RN.toLocaleString('es-ES')}</td>
+        <td>${r.PAX.toLocaleString('es-ES')}</td>
+        <td>${(r.PAX/(r.RN||1)).toFixed(2)}</td>
+      </tr>`
+    )).join('');
   }
+
+  // ======= EXPORTACIONES =======
+  el('btnCsv').addEventListener('click', downloadCSV);
+  el('btnXlsx').addEventListener('click', downloadXLSX);
 
   function downloadCSV(){
     const rows = filtered.map(r=>({Mes:r.Month_Name, Hotel:r.Complejo, RN:r.RN, PAX:r.PAX, PAX_por_RN: (r.PAX/(r.RN||1)).toFixed(2)}));
-    const header = Object.keys(rows[0]||{Mes:'',Hotel:'',RN:'',PAX:'',PAX_por_RN:''}).join(',');
+    const header = Object.keys(rows[0] || {Mes:'',Hotel:'',RN:'',PAX:'',PAX_por_RN:''}).join(',');
     const body = rows.map(r=>Object.values(r).join(',')).join('\n');
     const blob = new Blob([header+'\n'+body], {type:'text/csv;charset=utf-8;'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'ocupaciones_filtrado.csv'; a.click();
@@ -293,23 +322,8 @@ https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js</script>
     XLSX.writeFile(wb, 'ocupaciones_filtrado.xlsx');
   }
 
+  // Utilidad
   function escapeHtml(s){ return s.replace(/[&<>\"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;','\\'':'&#39;'}[c])); }
-
-  // UX: si el usuario pega accidentalmente un CSV
-  window.addEventListener('paste', (e)=>{
-    const text = (e.clipboardData || window.clipboardData).getData('text');
-    if(text && text.includes(',')){
-      try{
-        const lines = text.trim().split(/\r?\n/);
-        const header = lines[0].split(',');
-        const rows = lines.slice(1).map(l=>{
-          const vals = l.split(','); const obj={}; header.forEach((h,i)=>obj[h.trim()] = vals[i]); return obj;
-        });
-        ingest(rows);
-      }catch(_){/* nada */}
-    }
-  });
 </script>
 </body>
 </html>
-``
