@@ -182,34 +182,55 @@
     });
   }
 
+
   async function loadExcelFromRepo(){
-    // Prueba varias rutas para cubrir GitHub Pages en raíz y en /docs
-    const basePath = location.pathname.endsWith('/') ? location.pathname : location.pathname.replace(/[^/]+$/, '');
-    const candidates = [
+    // Intenta varias rutas en GitHub Pages + RAW de GitHub
+    const basePath = location.pathname.endsWith('/') ? location.pathname : location.pathname.replace(/[^/]+$/, '/');
+
+    // Deducción owner/repo a partir de https://{owner}.github.io/{repo}/...
+    const owner = (location.hostname.split('.')[0] || '').trim();
+    const repo  = (location.pathname.split('/').filter(Boolean)[0] || '').trim();
+
+    // Candidatas locales (mismo directorio que index.html)
+    const localCandidates = [
       `${basePath}OCUPACIONES.xlsx`,
       `./OCUPACIONES.xlsx`,
-      `/OCUPACIONES.xlsx`
+      `/OCUPACIONES.xlsx` // por si publicas en raíz
     ];
 
+    // Candidatas RAW (por si Pages sirve desde /docs o branch distinto)
+    const rawCandidates = owner && repo ? [
+      `https://raw.githubusercontent.com/${owner}/${repo}/main/OCUPACIONES.xlsx`,
+      `https://raw.githubusercontent.com/${owner}/${repo}/gh-pages/OCUPACIONES.xlsx`,
+      `https://raw.githubusercontent.com/${owner}/${repo}/main/docs/OCUPACIONES.xlsx`,
+      `https://raw.githubusercontent.com/${owner}/${repo}/gh-pages/docs/OCUPACIONES.xlsx`
+    ] : [];
+
+    const candidates = [...localCandidates, ...rawCandidates];
+
     let lastErr;
-    for(const url of candidates){
+    for (const url of candidates){
       try{
-        console.log('Intentando fetch:', url);
+        console.log('[fetch]', url);
         const res = await fetch(url, {cache:'no-store'});
         if(!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+
         const ab = await res.arrayBuffer();
         const wb = XLSX.read(ab, {type:'array'});
         const sh = wb.Sheets[wb.SheetNames[0]];
         const json = XLSX.utils.sheet_to_json(sh, {defval:null});
-        return json;
+        return json; // ← ¡éxito!
       }catch(e){
-        lastErr = e;
-        console.warn('Fallo leyendo', url, e);
+        lastErr = e; console.warn('[fallo]', url, e);
       }
     }
-    throw lastErr || new Error('No se pudo localizar OCU… perdón, OCUPACIONES.xlsx');
+    throw lastErr || new Error('No se pudo localizar/leer OCUPACIONES.xlsx en ninguna ruta candidata.');
   }
 
+
+
+
+ 
   function normalize(rows){
     return rows.map(r => ({
       Month_Name: String(r['Month_Name'] ?? r['Mes'] ?? r['month'] ?? '').trim(),
