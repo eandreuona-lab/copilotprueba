@@ -2,76 +2,84 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-        background: #f5f6fa;<title>TER100 – Cálculo Ahorro Energético</title>
+<title>TER100 · Calculadora de Ahorro | ONA Hotels</title>
+
+<style>
+    /* ------------------------------
+       ESTILO CORPORATIVO ONA HOTELS
+    ------------------------------ */
+
+    :root {
+        --azul-ona: #0c2b4b;
+        --azul-ona-suave: #1c3f63;
+        --dorado-ona: #c9a063;
+        --gris-fondo: #f5f5f5;
+        --blanco: #ffffff;
+    }
+
+    body {
+        font-family: 'Helvetica Neue', Arial, sans-serif;
         margin: 0;
         padding: 0;
+        background: var(--gris-fondo);
+        color: #333;
     }
 
     h1 {
-        background: #003366;
-        color: white;
-        padding: 20px;
+        background: var(--azul-ona);
+        color: var(--blanco);
+        padding: 40px 20px;
         text-align: center;
-        margin: 0 0 20px 0;
+        font-size: 34px;
+        letter-spacing: 1px;
+        margin: 0 0 40px 0;
+        font-weight: 300;
     }
 
     .container {
-        max-width: 1200px;
+        max-width: 1100px;
         margin: auto;
-        padding: 10px;
+        padding: 20px;
     }
 
     .card {
-        background: white;
-        padding: 20px;
+        background: var(--blanco);
+        padding: 30px;
         border-radius: 12px;
-        margin-bottom: 25px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        margin-bottom: 35px;
     }
 
     .card h2 {
         margin-top: 0;
-        font-size: 22px;
-        color: #003366;
+        color: var(--azul-ona);
+        font-weight: 300;
+        font-size: 26px;
+        border-left: 6px solid var(--dorado-ona);
+        padding-left: 12px;
     }
 
     label {
-        font-weight: bold;
+        font-weight: 500;
         display: block;
-        margin-top: 10px;
+        margin-top: 15px;
+        color: var(--azul-ona-suave);
     }
 
     input, select {
         width: 100%;
-        padding: 10px;
-        margin-top: 5px;
-        border-radius: 6px;
-        border: 1px solid #ccc;
-    }
-
-    button {
-        width: 100%;
-        padding: 15px;
-        font-size: 18px;
-        background: #003366;
-        color: white;
-        border: none;
+        padding: 12px;
+        margin-top: 6px;
         border-radius: 8px;
-        margin-top: 20px;
-        cursor: pointer;
+        border: 1px solid #ccc;
+        background: #fafafa;
+        transition: 0.2s;
     }
 
-    button:hover {
-        background: #0055aa;
-    }
-
-    .resultado {
-        background: #e6f0ff;
-        border-left: 6px solid #003366;
-        padding: 15px;
-        margin-top: 20px;
-        border-radius: 6px;
-        font-size: 18px;
+    input:focus, select:focus {
+        border-color: var(--dorado-ona);
+        outline: none;
+        background: #fff;
     }
 
     .flex {
@@ -82,26 +90,53 @@
     .flex .col {
         flex: 1;
     }
+
+    button {
+        width: 100%;
+        padding: 18px;
+        font-size: 20px;
+        background: var(--azul-ona);
+        color: var(--blanco);
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: 0.3s;
+        letter-spacing: 0.5px;
+    }
+
+    button:hover {
+        background: var(--dorado-ona);
+        color: var(--azul-ona);
+    }
+
+    .resultado {
+        background: #f0f5ff;
+        border-left: 6px solid var(--azul-ona);
+        padding: 20px;
+        border-radius: 8px;
+        font-size: 18px;
+        margin-top: 20px;
+        line-height: 1.6em;
+    }
 </style>
 </head>
 <body>
 
-<h1>TER100 – Cálculo Oficial del Ahorro Energético</h1>
+<h1>Calculadora TER100 · ONA Hotels</h1>
 
 <div class="container">
 
-    <!-- CALDERA EXISTENTE -->
+    <!-- CALDERA -->
     <div class="card">
         <h2>1. Caldera Existente</h2>
-
-        <label>Rendimiento según tipo (Anexo VIII)</label>
+        <label>Rendimiento según Anexo VIII</label>
         <select id="rendCaldera">
             <option value="">-- Seleccionar --</option>
-            <option value="0.55">Gas anterior a 1979 – 55%</option>
+            <option value="0.55">Gas anterior 1979 – 55%</option>
             <option value="0.65">Gas 1979–1997 – 65%</option>
-            <option value="0.68">Gas forzado alta capacidad – 68%</option>
-            <option value="0.72">Gas forzado baja capacidad – 72%</option>
-            <option value="0.85">Gas condensación ≤1998 – 85%</option>
+            <option value="0.68">Gas forzado (alta) – 68%</option>
+            <option value="0.72">Gas forzado (baja) – 72%</option>
+            <option value="0.85">Gas condensación (≤1998) – 85%</option>
             <option value="0.69">Gas ≥1998 piloto – 69%</option>
             <option value="0.73">Gas ≥1998 automático – 73%</option>
             <option value="0.79">Gas ≥1998 condensación – 79%</option>
@@ -112,7 +147,7 @@
             <option value="0.55">Biomasa manual – 55%</option>
             <option value="0.60">Biomasa manual calefactado – 60%</option>
             <option value="0.60">Biomasa automática – 60%</option>
-            <option value="0.65">Biomasa autom. calefactado – 65%</option>
+            <option value="0.65">Biomasa automática calefactado – 65%</option>
         </select>
     </div>
 
@@ -130,7 +165,7 @@
                 <input id="scopdhw" type="number" step="0.01">
             </div>
             <div class="col">
-                <label>SCOP piscina CAP</label>
+                <label>SCOP Piscina CAP</label>
                 <input id="scopcap" type="number" step="0.01">
             </div>
         </div>
@@ -141,11 +176,11 @@
         <h2>3. Calefacción (AEC)</h2>
         <div class="flex">
             <div class="col">
-                <label>Demanda calefacción DC (kWh/año·m²)</label>
+                <label>Demanda DC (kWh/año·m²)</label>
                 <input id="dc" type="number">
             </div>
             <div class="col">
-                <label>Superficie útil S (m²)</label>
+                <label>Superficie S (m²)</label>
                 <input id="superf" type="number">
             </div>
             <div class="col">
@@ -157,8 +192,7 @@
 
     <!-- ACS -->
     <div class="card">
-        <h2>4. Agua Caliente Sanitaria (AE_ACS)</h2>
-
+        <h2>4. Agua Caliente Sanitaria</h2>
         <div class="flex">
             <div class="col">
                 <label>Demanda ACS (kWh/año)</label>
@@ -166,7 +200,7 @@
             </div>
             <div class="col">
                 <label>FP ACS</label>
-                <input id="fp_acs" type="number" step="0.01" value="1">
+                <input id="fp_acs" type="number" value="1" step="0.01">
             </div>
             <div class="col"></div>
         </div>
@@ -174,8 +208,7 @@
 
     <!-- PISCINA -->
     <div class="card">
-        <h2>5. Piscina CAP (AE_CAP)</h2>
-
+        <h2>5. Piscina CAP</h2>
         <div class="flex">
             <div class="col">
                 <label>Demanda CAP (kWh/año)</label>
@@ -183,26 +216,25 @@
             </div>
             <div class="col">
                 <label>FP piscina</label>
-                <input id="fp_cap" type="number" step="0.01" value="1">
+                <input id="fp_cap" type="number" value="1" step="0.01">
             </div>
             <div class="col"></div>
         </div>
     </div>
 
-    <!-- BOTÓN -->
+    <!-- BOTÓN Y RESULTADO -->
     <div class="card">
         <button onclick="calcular()">Calcular Ahorro Total</button>
-
         <div id="resultado" class="resultado" style="display:none;"></div>
     </div>
 
 </div>
 
+
 <script>
 function calcular() {
 
     const ηi = parseFloat(document.getElementById("rendCaldera").value);
-
     const SCOP = parseFloat(document.getElementById("scop").value);
     const SCOP_DHW = parseFloat(document.getElementById("scopdhw").value);
     const SCOP_CAP = parseFloat(document.getElementById("scopcap").value);
@@ -217,25 +249,20 @@ function calcular() {
     const DCAP = parseFloat(document.getElementById("dcap").value);
     const FP_CAP = parseFloat(document.getElementById("fp_cap").value);
 
-    // F1 se considera = 1 según TER100
     const AEC = (ηi - (1/SCOP)) * DC * S * FP_CAL;
     const AE_ACS = (ηi - (1/SCOP_DHW)) * DACS * FP_ACS;
     const AE_CAP = (ηi - (1/SCOP_CAP)) * DCAP * FP_CAP;
 
-    const AETOTAL = AEC + AE_ACS + AE_CAP;
+    const AET = AEC + AE_ACS + AE_CAP;
 
     document.getElementById("resultado").style.display = "block";
     document.getElementById("resultado").innerHTML =
-        `<strong>AEC (Calefacción):</strong> ${AEC.toFixed(2)} kWh/año<br>
-         <strong>AE_ACS:</strong> ${AE_ACS.toFixed(2)} kWh/año<br>
-         <strong>AE_CAP:</strong> ${AE_CAP.toFixed(2)} kWh/año<br><br>
-         <strong style="font-size:20px;">Ahorro TOTAL:</strong> ${AETOTAL.toFixed(2)} kWh/año`;
+        `<strong>Ahorro Calefacción (AEC):</strong> ${AEC.toFixed(2)} kWh/año<br>
+         <strong>Ahorro ACS:</strong> ${AE_ACS.toFixed(2)} kWh/año<br>
+         <strong>Ahorro Piscina CAP:</strong> ${AE_CAP.toFixed(2)} kWh/año<br><br>
+         <strong style="font-size:22px; color:var(--azul-ona);">Ahorro TOTAL:</strong> ${AET.toFixed(2)} kWh/año`;
 }
 </script>
 
 </body>
 </html>
-
-<style>
-    body {
-        font-family: Arial, sans-serif;
