@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Calculadora TER100 – Ahorro Energético</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f2f4f7;
+        margin: 0;
+        padding: 0;
+    }
+
+    h1 {
+        text-align: center;
+        padding: 20px;
+        background: #004b8d;
+        color: white;
+        margin: 0 0 20px 0;
+    }
+
+    .card {
+        background: white;
+        max-width: 900px;
+        margin: 20px auto;
+        padding: 20px 25px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .section-title {
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #004b8d;
+    }
+
+    label {
+        font-weight: bold;
+        margin-top: 10px;
+        display: block;
+    }
+
+    input, select {
+        width: 100%;
+        padding: 8px;
+        margin-top: 4px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+    }
+
+    button {
+        background: #004b8d;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 20px;
+    }
+
+    button:hover {
+        background: #0062c4;
+    }
+
+    .result-box {
+        background: #e8f0ff;
+        padding: 15px;
+        border-left: 5px solid #004b8d;
+        margin-top: 15px;
+        border-radius: 6px;
+        font-size: 18px;
+    }
+
+</style>
+</head>
+<body>
+
+<h1>Calculadora TER100 – Ahorro de Energía</h1>
+
+<!-- DATOS CALDERA EXISTENTE -->
+<div class="card">
+    <div class="section-title">1. Caldera Existente</div>
+
+    <label>Selecciona tipo y antigüedad (Anexo VIII)</label>
+    <select id="rendimientoCaldera">
+        <option value="">-- Seleccionar --</option>
+        <option value="0.55">Gas anterior 1979 tiro equilibrado</option>
+        <option value="0.65">Gas 1979–1997 tiro natural</option>
+        <option value="0.65">Gas mural anterior 1998</option>
+        <option value="0.68">Gas forzado alta capacidad anterior 1998</option>
+        <option value="0.72">Gas forzado baja capacidad anterior 1998</option>
+        <option value="0.85">Gas condensación anterior 1998</option>
+        <option value="0.69">Gas ≥1998 con piloto</option>
+        <option value="0.73">Gas ≥1998 encendido automático</option>
+        <option value="0.79">Gas ≥1998 condensación piloto</option>
+        <option value="0.83">Gas ≥1998 condensación automático</option>
+        <option value="0.65">Gasóleo anterior 1985</option>
+        <option value="0.70">Gasóleo 1985–1997</option>
+        <option value="0.79">Gasóleo ≥1998 sin condensación</option>
+        <option value="0.83">Gasóleo condensación</option>
+        <option value="0.55">Biomasa manual sin calefactar</option>
+        <option value="0.60">Biomasa manual calefactado</option>
+        <option value="0.60">Biomasa automática sin calefactar</option>
+        <option value="0.65">Biomasa automática calefactado</option>
+    </select>
+</div>
+
+<!-- DATOS BOMBA DE CALOR -->
+<div class="card">
+    <div class="section-title">2. Bomba de Calor Nueva</div>
+
+    <label>Tipo de bomba</label>
+    <select id="tipoBC">
+        <option value="">-- Seleccionar --</option>
+        <option value="air">Aerotérmica</option>
+        <option value="geo">Geotérmica</option>
+        <option value="hidro">Hidrotérmica</option>
+    </select>
+
+    <label>SCOP calefacción (Anexo II / ficha ErP)</label>
+    <input id="scop" type="number" step="0.01">
+
+    <label>SCOP DHW (ACS) o COP según Anexo IV</label>
+    <input id="scop_dhw" type="number" step="0.01">
+
+    <label>SCOP piscina CAP (Anexo VI)</label>
+    <input id="scop_cap" type="number" step="0.01">
+</div>
+
+<!-- CALEFACCIÓN -->
+<div class="card">
+    <div class="section-title">3. Cálculo Calefacción (AEC)</div>
+
+    <label>Demanda calefacción DC (kWh/año·m²)</label>
+    <input id="dc" type="number">
+
+    <label>Superficie útil S (m²)</label>
+    <input id="superficie" type="number">
+
+    <label>Factor de ponderación FP (normalmente = 1)</label>
+    <input id="fp_cal" type="number" value="1" step="0.01">
+</div>
+
+<!-- ACS -->
+<div class="card">
+    <div class="section-title">4. Cálculo ACS (AE_ACS)</div>
+
+    <label>Demanda ACS (kWh/año)</label>
+    <input id="dacs" type="number">
+
+    <label>Factor de ponderación FP ACS (normalmente = 1)</label>
+    <input id="fp_acs" type="number" value="1" step="0.01">
+</div>
+
+<!-- PISCINA -->
+<div class="card">
+    <div class="section-title">5. Cálculo Piscina CAP (AE_CAP)</div>
+
+    <label>Demanda CAP (kWh/año)</label>
+    <input id="dcap" type="number">
+
+    <label>Factor de ponderación FP CAP (normalmente = 1)</label>
+    <input id="fp_cap" type="number" value="1" step="0.01">
+</div>
+
+<!-- BOTÓN -->
+<div class="card">
+    <button onclick="calcular()">Calcular Ahorro Total</button>
+
+    <div id="resultado" class="result-box" style="display:none;"></div>
+</div>
+
+<script>
+function calcular() {
+
+    const ηi = parseFloat(document.getElementById("rendimientoCaldera").value);
+    const SCOP = parseFloat(document.getElementById("scop").value);
+    const SCOP_DHW = parseFloat(document.getElementById("scop_dhw").value);
+    const SCOP_CAP = parseFloat(document.getElementById("scop_cap").value);
+
+    const DC = parseFloat(document.getElementById("dc").value);
+    const S  = parseFloat(document.getElementById("superficie").value);
+
+    const FP_CAL = parseFloat(document.getElementById("fp_cal").value);
+    const DACS = parseFloat(document.getElementById("dacs").value);
+    const FP_ACS = parseFloat(document.getElementById("fp_acs").value);
+
+    const DCAP = parseFloat(document.getElementById("dcap").value);
+    const FP_CAP = parseFloat(document.getElementById("fp_cap").value);
+
+    // F1 según ficha: 1 (implícito en fórmula)
+    const F1 = 1;
+
+    // CALCULOS TER100 oficiales
+
+    // 1. Ahorro calefacción
+    const AEC = ((F1 * (ηi - (1/SCOP))) * DC * S * FP_CAL);
+
+    // 2. Ahorro ACS
+    const AE_ACS = ((F1 * (ηi - (1/SCOP_DHW))) * DACS * FP_ACS);
+
+    // 3. Ahorro piscina CAP
+    const AE_CAP = ((F1 * (ηi - (1/SCOP_CAP))) * DCAP * FP_CAP);
+
+    // Total
+    const AET = AEC + AE_ACS + AE_CAP;
+
+    document.getElementById("resultado").style.display = "block";
+    document.getElementById("resultado").innerHTML =
+        "<strong>Ahorro calefacción (AEC):</strong> " + AEC.toFixed(2) + " kWh/año<br>" +
+        "<strong>Ahorro ACS:</strong> " + AE_ACS.toFixed(2) + " kWh/año<br>" +
+        "<strong>Ahorro piscina:</strong> " + AE_CAP.toFixed(2) + " kWh/año<br><br>" +
+        "<strong style='font-size:22px;'>Ahorro TOTAL:</strong> " + AET.toFixed(2) + " kWh/año";
+}
+</script>
+
+</body>
+</html>
