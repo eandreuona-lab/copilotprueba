@@ -1,268 +1,315 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>TER100 · Calculadora de Ahorro | ONA Hotels</title>
-
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dashboard de Ocupaciones – RN & PAX</title>
+https://cdn.jsdelivr.net
 <style>
-    /* ------------------------------
-       ESTILO CORPORATIVO ONA HOTELS
-    ------------------------------ */
-
-    :root {
-        --azul-ona: #0c2b4b;
-        --azul-ona-suave: #1c3f63;
-        --dorado-ona: #c9a063;
-        --gris-fondo: #f5f5f5;
-        --blanco: #ffffff;
-    }
-
-    body {
-        font-family: 'Helvetica Neue', Arial, sans-serif;
-        margin: 0;
-        padding: 0;
-        background: var(--gris-fondo);
-        color: #333;
-    }
-
-    h1 {
-        background: var(--azul-ona);
-        color: var(--blanco);
-        padding: 40px 20px;
-        text-align: center;
-        font-size: 34px;
-        letter-spacing: 1px;
-        margin: 0 0 40px 0;
-        font-weight: 300;
-    }
-
-    .container {
-        max-width: 1100px;
-        margin: auto;
-        padding: 20px;
-    }
-
-    .card {
-        background: var(--blanco);
-        padding: 30px;
-        border-radius: 12px;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-        margin-bottom: 35px;
-    }
-
-    .card h2 {
-        margin-top: 0;
-        color: var(--azul-ona);
-        font-weight: 300;
-        font-size: 26px;
-        border-left: 6px solid var(--dorado-ona);
-        padding-left: 12px;
-    }
-
-    label {
-        font-weight: 500;
-        display: block;
-        margin-top: 15px;
-        color: var(--azul-ona-suave);
-    }
-
-    input, select {
-        width: 100%;
-        padding: 12px;
-        margin-top: 6px;
-        border-radius: 8px;
-        border: 1px solid #ccc;
-        background: #fafafa;
-        transition: 0.2s;
-    }
-
-    input:focus, select:focus {
-        border-color: var(--dorado-ona);
-        outline: none;
-        background: #fff;
-    }
-
-    .flex {
-        display: flex;
-        gap: 20px;
-    }
-
-    .flex .col {
-        flex: 1;
-    }
-
-    button {
-        width: 100%;
-        padding: 18px;
-        font-size: 20px;
-        background: var(--azul-ona);
-        color: var(--blanco);
-        border: none;
-        border-radius: 12px;
-        cursor: pointer;
-        transition: 0.3s;
-        letter-spacing: 0.5px;
-    }
-
-    button:hover {
-        background: var(--dorado-ona);
-        color: var(--azul-ona);
-    }
-
-    .resultado {
-        background: #f0f5ff;
-        border-left: 6px solid var(--azul-ona);
-        padding: 20px;
-        border-radius: 8px;
-        font-size: 18px;
-        margin-top: 20px;
-        line-height: 1.6em;
-    }
+  :root{
+    --azul:#0c2b4b; --azul-suave:#1c3f63; --dorado:#c9a063; --bg:#f5f6fa; --card:#ffffff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:#233}
+  header{background:var(--azul);color:#fff;padding:22px 16px}
+  header h1{margin:0;font-weight:600;letter-spacing:.3px;font-size:22px}
+  header p{margin:6px 0 0 0;opacity:.85}
+  .wrap{max-width:1200px;margin:20px auto;padding:0 14px}
+  .card{background:var(--card);border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,.08);margin:16px 0;padding:18px}
+  .card h2{margin:0 0 12px 0;color:var(--azul);font-weight:600;border-left:6px solid var(--dorado);padding-left:10px}
+  .row{display:flex;gap:16px;flex-wrap:wrap}
+  .col{flex:1 1 260px}
+  label{display:block;font-weight:600;color:var(--azul-suave);margin:8px 0 6px}
+  input[type=file],select,button{width:100%;padding:10px 12px;border:1px solid #ccd;border-radius:10px;background:#fff}
+  button{background:var(--azul);color:#fff;border:none;cursor:pointer;font-weight:600}
+  button:hover{background:var(--dorado);color:var(--azul)}
+  .kpis{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:12px}
+  .kpi{background:#0c2b4b08;border-left:5px solid var(--azul);border-radius:10px;padding:12px 14px}
+  .kpi h3{margin:0;color:var(--azul-suave);font-size:13px;text-transform:uppercase;letter-spacing:.5px}
+  .kpi .v{font-size:22px;font-weight:800;margin-top:6px}
+  canvas{max-height:380px}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:8px 10px;border-bottom:1px solid #eee}
+  th{background:#fafafa;text-align:left}
+  .muted{opacity:.75}
+  .pill{display:inline-block;background:#eef;border-radius:999px;padding:4px 10px;margin-right:6px}
+  .footer{font-size:12px;color:#456;opacity:.8;margin-top:8px}
+  .filters{display:flex;gap:10px;flex-wrap:wrap}
+  .filter-chip{background:#eef3ff;border:1px solid #dde6ff;color:#10305f;border-radius:999px;padding:6px 10px;font-size:12px}
 </style>
 </head>
 <body>
+<header>
+  <h1>Dashboard de Ocupaciones – RN & PAX</h1>
+  <p>Carga el Excel (estructura: Month_Name, Complejo, RN Totales, PAX) y explora por hotel/mes con gráficos y rankings.</p>
+</header>
 
-<h1>Calculadora TER100 · ONA Hotels</h1>
-
-<div class="container">
-
-    <!-- CALDERA -->
-    <div class="card">
-        <h2>1. Caldera Existente</h2>
-        <label>Rendimiento según Anexo VIII</label>
-        <select id="rendCaldera">
-            <option value="">-- Seleccionar --</option>
-            <option value="0.55">Gas anterior 1979 – 55%</option>
-            <option value="0.65">Gas 1979–1997 – 65%</option>
-            <option value="0.68">Gas forzado (alta) – 68%</option>
-            <option value="0.72">Gas forzado (baja) – 72%</option>
-            <option value="0.85">Gas condensación (≤1998) – 85%</option>
-            <option value="0.69">Gas ≥1998 piloto – 69%</option>
-            <option value="0.73">Gas ≥1998 automático – 73%</option>
-            <option value="0.79">Gas ≥1998 condensación – 79%</option>
-            <option value="0.65">Gasóleo ≤1985 – 65%</option>
-            <option value="0.70">Gasóleo 1985–1997 – 70%</option>
-            <option value="0.79">Gasóleo ≥1998 – 79%</option>
-            <option value="0.83">Gasóleo condensación – 83%</option>
-            <option value="0.55">Biomasa manual – 55%</option>
-            <option value="0.60">Biomasa manual calefactado – 60%</option>
-            <option value="0.60">Biomasa automática – 60%</option>
-            <option value="0.65">Biomasa automática calefactado – 65%</option>
-        </select>
+<div class="wrap">
+  <div class="card">
+    <h2>1) Cargar datos</h2>
+    <div class="row">
+      <div class="col"><label>Archivo Excel (.xlsx)</label><input type="file" id="file" accept=".xlsx,.xls" /></div>
+      <div class="col"><label>&nbsp;</label><button id="btnDemo" title="Usa un subconjunto de ejemplo para probar">Cargar demo</button></div>
     </div>
+    <div class="footer">Tu archivo no se sube a ningún servidor: el procesamiento se hace 100% en tu navegador.</div>
+  </div>
 
-    <!-- BOMBA DE CALOR -->
-    <div class="card">
-        <h2>2. Bomba de Calor Nueva</h2>
-
-        <div class="flex">
-            <div class="col">
-                <label>SCOP calefacción</label>
-                <input id="scop" type="number" step="0.01">
-            </div>
-            <div class="col">
-                <label>SCOP ACS (SCOP DHW)</label>
-                <input id="scopdhw" type="number" step="0.01">
-            </div>
-            <div class="col">
-                <label>SCOP Piscina CAP</label>
-                <input id="scopcap" type="number" step="0.01">
-            </div>
-        </div>
+  <div class="card">
+    <h2>2) Filtros</h2>
+    <div class="row">
+      <div class="col">
+        <label>Meses</label>
+        <select id="selMeses" multiple size="6"></select>
+      </div>
+      <div class="col">
+        <label>Hoteles</label>
+        <select id="selHoteles" multiple size="10"></select>
+      </div>
+      <div class="col">
+        <label>&nbsp;</label>
+        <button id="btnReset">Quitar filtros</button>
+      </div>
     </div>
+    <div id="chips" class="filters" style="margin-top:10px"></div>
+  </div>
 
-    <!-- CALEFACCIÓN -->
-    <div class="card">
-        <h2>3. Calefacción (AEC)</h2>
-        <div class="flex">
-            <div class="col">
-                <label>Demanda DC (kWh/año·m²)</label>
-                <input id="dc" type="number">
-            </div>
-            <div class="col">
-                <label>Superficie S (m²)</label>
-                <input id="superf" type="number">
-            </div>
-            <div class="col">
-                <label>FP calefacción</label>
-                <input id="fp_cal" type="number" value="1" step="0.01">
-            </div>
-        </div>
+  <div class="card">
+    <h2>3) KPIs</h2>
+    <div class="kpis">
+      <div class="kpi"><h3>RN Totales</h3><div class="v" id="kpiRN">–</div></div>
+      <div class="kpi"><h3>PAX Totales</h3><div class="v" id="kpiPAX">–</div></div>
+      <div class="kpi"><h3>PAX/RN</h3><div class="v" id="kpiPR">–</div></div>
+      <div class="kpi"><h3>Nº Hoteles</h3><div class="v" id="kpiN">–</div></div>
     </div>
+  </div>
 
-    <!-- ACS -->
-    <div class="card">
-        <h2>4. Agua Caliente Sanitaria</h2>
-        <div class="flex">
-            <div class="col">
-                <label>Demanda ACS (kWh/año)</label>
-                <input id="dacs" type="number">
-            </div>
-            <div class="col">
-                <label>FP ACS</label>
-                <input id="fp_acs" type="number" value="1" step="0.01">
-            </div>
-            <div class="col"></div>
-        </div>
+  <div class="card">
+    <h2>4) Gráficos</h2>
+    <div class="row">
+      <div class="col"><canvas id="chartMeses"></canvas></div>
+      <div class="col"><canvas id="chartTop"></canvas></div>
     </div>
+  </div>
 
-    <!-- PISCINA -->
-    <div class="card">
-        <h2>5. Piscina CAP</h2>
-        <div class="flex">
-            <div class="col">
-                <label>Demanda CAP (kWh/año)</label>
-                <input id="dcap" type="number">
-            </div>
-            <div class="col">
-                <label>FP piscina</label>
-                <input id="fp_cap" type="number" value="1" step="0.01">
-            </div>
-            <div class="col"></div>
-        </div>
+  <div class="card">
+    <h2>5) Ranking por hotel</h2>
+    <div style="overflow:auto">
+      <table id="tblRanking">
+        <thead>
+          <tr><th>#</th><th>Hotel</th><th>RN</th><th>PAX</th><th>PAX/RN</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </div>
-
-    <!-- BOTÓN Y RESULTADO -->
-    <div class="card">
-        <button onclick="calcular()">Calcular Ahorro Total</button>
-        <div id="resultado" class="resultado" style="display:none;"></div>
+    <div class="row" style="margin-top:10px">
+      <div class="col"><button id="btnCsv">Descargar CSV (filtrado)</button></div>
+      <div class="col"><button id="btnXlsx">Descargar Excel (filtrado)</button></div>
     </div>
+  </div>
 
+  <div class="footer muted">© ONA Hotels · Herramienta interna de análisis — generado por M365 Copilot</div>
 </div>
 
-
+https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4rt.umd.min.js</script>
 <script>
-function calcular() {
+  // Estado global
+  let raw = [];
+  let filtered = [];
+  let chartMeses, chartTop;
+  const MESES_ORD = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-    const ηi = parseFloat(document.getElementById("rendCaldera").value);
-    const SCOP = parseFloat(document.getElementById("scop").value);
-    const SCOP_DHW = parseFloat(document.getElementById("scopdhw").value);
-    const SCOP_CAP = parseFloat(document.getElementById("scopcap").value);
+  document.getElementById('file').addEventListener('change', handleFile);
+  document.getElementById('btnDemo').addEventListener('click', loadDemo);
+  document.getElementById('btnReset').addEventListener('click', ()=>{ selMeses.selectedIndex=-1; selHoteles.selectedIndex=-1; applyFilters(); });
+  document.getElementById('btnCsv').addEventListener('click', downloadCSV);
+  document.getElementById('btnXlsx').addEventListener('click', downloadXLSX);
 
-    const DC = parseFloat(document.getElementById("dc").value);
-    const S  = parseFloat(document.getElementById("superf").value);
-    const FP_CAL = parseFloat(document.getElementById("fp_cal").value);
+  const selMeses = document.getElementById('selMeses');
+  const selHoteles = document.getElementById('selHoteles');
+  selMeses.addEventListener('change', applyFilters);
+  selHoteles.addEventListener('change', applyFilters);
 
-    const DACS = parseFloat(document.getElementById("dacs").value);
-    const FP_ACS = parseFloat(document.getElementById("fp_acs").value);
+  function handleFile(evt){
+    const file = evt.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array'});
+      const sh = wb.Sheets[wb.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(sh, {defval:null});
+      ingest(json);
+    };
+    reader.readAsArrayBuffer(file);
+  }
 
-    const DCAP = parseFloat(document.getElementById("dcap").value);
-    const FP_CAP = parseFloat(document.getElementById("fp_cap").value);
+  function loadDemo(){
+    // Subconjunto artificial para probar interfaz
+    const demo = [
+      {Month_Name:'Enero', Complejo:'Hotel Alfa', 'RN Totales':1200, PAX:2400},
+      {Month_Name:'Enero', Complejo:'Hotel Beta', 'RN Totales':900, PAX:1600},
+      {Month_Name:'Febrero', Complejo:'Hotel Alfa', 'RN Totales':1500, PAX:2800},
+      {Month_Name:'Febrero', Complejo:'Hotel Beta', 'RN Totales':800, PAX:1400},
+      {Month_Name:'Marzo', Complejo:'Hotel Alfa', 'RN Totales':1700, PAX:3200},
+      {Month_Name:'Marzo', Complejo:'Hotel Beta', 'RN Totales':950, PAX:1700}
+    ];
+    ingest(demo);
+  }
 
-    const AEC = (ηi - (1/SCOP)) * DC * S * FP_CAL;
-    const AE_ACS = (ηi - (1/SCOP_DHW)) * DACS * FP_ACS;
-    const AE_CAP = (ηi - (1/SCOP_CAP)) * DCAP * FP_CAP;
+  function normalizeRow(r){
+    // Asegura nombres de columnas esperados y tipos numéricos
+    const row = {
+      Month_Name: String(r['Month_Name'] ?? r['Mes'] ?? r['month'] ?? '').trim(),
+      Complejo: String(r['Complejo'] ?? r['Hotel'] ?? r['Property'] ?? '').trim(),
+      RN: Number(r['RN Totales'] ?? r['RN'] ?? r['RoomNights'] ?? 0) || 0,
+      PAX: Number(r['PAX'] ?? r['Pax'] ?? r['Guests'] ?? 0) || 0,
+    };
+    return row;
+  }
 
-    const AET = AEC + AE_ACS + AE_CAP;
+  function ingest(rows){
+    // Limpieza: mapea columnas, quita filas Total, quita vacíos
+    raw = rows.map(normalizeRow)
+             .filter(r => r.Month_Name && r.Complejo && r.Complejo.toLowerCase() !== 'total');
+    buildFilters();
+    applyFilters();
+  }
 
-    document.getElementById("resultado").style.display = "block";
-    document.getElementById("resultado").innerHTML =
-        `<strong>Ahorro Calefacción (AEC):</strong> ${AEC.toFixed(2)} kWh/año<br>
-         <strong>Ahorro ACS:</strong> ${AE_ACS.toFixed(2)} kWh/año<br>
-         <strong>Ahorro Piscina CAP:</strong> ${AE_CAP.toFixed(2)} kWh/año<br><br>
-         <strong style="font-size:22px; color:var(--azul-ona);">Ahorro TOTAL:</strong> ${AET.toFixed(2)} kWh/año`;
-}
+  function buildFilters(){
+    // Meses
+    selMeses.innerHTML = '';
+    MESES_ORD.forEach(m=>{
+      const opt = document.createElement('option'); opt.value=m; opt.textContent=m; selMeses.appendChild(opt);
+    });
+    // Hoteles
+    selHoteles.innerHTML = '';
+    const hoteles = [...new Set(raw.map(r=>r.Complejo))].sort((a,b)=>a.localeCompare(b,'es'));
+    hoteles.forEach(h=>{ const o=document.createElement('option'); o.value=h; o.textContent=h; selHoteles.appendChild(o); });
+  }
+
+  function getSelectedValues(sel){
+    return Array.from(sel.selectedOptions).map(o=>o.value);
+  }
+
+  function applyFilters(){
+    const meses = getSelectedValues(selMeses);
+    const hoteles = getSelectedValues(selHoteles);
+    filtered = raw.filter(r => (meses.length? meses.includes(r.Month_Name):true)
+                           && (hoteles.length? hoteles.includes(r.Complejo):true));
+    renderChips(meses, hoteles);
+    updateKPIs();
+    updateCharts();
+    renderRanking();
+  }
+
+  function renderChips(meses,hoteles){
+    const div = document.getElementById('chips');
+    const chips = [];
+    if(meses.length) chips.push(`<span class="filter-chip">Meses: ${meses.join(', ')}</span>`);
+    if(hoteles.length) chips.push(`<span class="filter-chip">Hoteles: ${hoteles.slice(0,6).join(', ')}${hoteles.length>6?'…':''}</span>`);
+    div.innerHTML = chips.join('');
+  }
+
+  function sum(arr, key){ return arr.reduce((a,b)=>a+(b[key]||0),0); }
+
+  function updateKPIs(){
+    const rn = sum(filtered,'RN');
+    const px = sum(filtered,'PAX');
+    const pr = rn? (px/rn): 0;
+    const nHoteles = new Set(filtered.map(r=>r.Complejo)).size;
+    document.getElementById('kpiRN').textContent = rn.toLocaleString('es-ES');
+    document.getElementById('kpiPAX').textContent = px.toLocaleString('es-ES');
+    document.getElementById('kpiPR').textContent = pr.toFixed(2);
+    document.getElementById('kpiN').textContent = nHoteles;
+  }
+
+  function groupByMonth(data){
+    const map = new Map();
+    data.forEach(r=>{
+      const k = r.Month_Name; if(!map.has(k)) map.set(k,{Month_Name:k,RN:0,PAX:0});
+      const o = map.get(k); o.RN += r.RN; o.PAX += r.PAX;
+    });
+    return Array.from(map.values()).sort((a,b)=>MESES_ORD.indexOf(a.Month_Name)-MESES_ORD.indexOf(b.Month_Name));
+  }
+
+  function groupByHotel(data){
+    const map = new Map();
+    data.forEach(r=>{
+      const k = r.Complejo; if(!map.has(k)) map.set(k,{Hotel:k,RN:0,PAX:0});
+      const o = map.get(k); o.RN += r.RN; o.PAX += r.PAX;
+    });
+    return Array.from(map.values()).sort((a,b)=>b.RN-a.RN);
+  }
+
+  function updateCharts(){
+    const byM = groupByMonth(filtered);
+    const labels = byM.map(d=>d.Month_Name);
+    const dsRN = byM.map(d=>d.RN);
+    const dsP = byM.map(d=>d.PAX);
+    const ctx1 = document.getElementById('chartMeses');
+    if(chartMeses) chartMeses.destroy();
+    chartMeses = new Chart(ctx1, {
+      type:'line',
+      data:{ labels, datasets:[
+        {label:'RN', data:dsRN, borderColor:'#0c2b4b', backgroundColor:'rgba(12,43,75,.08)', tension:.25, fill:true},
+        {label:'PAX', data:dsP, borderColor:'#c9a063', backgroundColor:'rgba(201,160,99,.10)', tension:.25, fill:true}
+      ]},
+      options:{ responsive:true, plugins:{legend:{position:'bottom'}}, scales:{ y:{beginAtZero:true}} }
+    });
+
+    const byH = groupByHotel(filtered).slice(0,10);
+    const ctx2 = document.getElementById('chartTop');
+    if(chartTop) chartTop.destroy();
+    chartTop = new Chart(ctx2, {
+      type:'bar',
+      data:{ labels: byH.map(d=>d.Hotel), datasets:[
+        {label:'RN', data: byH.map(d=>d.RN), backgroundColor:'#0c2b4b'},
+        {label:'PAX', data: byH.map(d=>d.PAX), backgroundColor:'#c9a063'}
+      ]},
+      options:{ indexAxis:'y', responsive:true, plugins:{legend:{position:'bottom'}}, scales:{x:{beginAtZero:true}} }
+    });
+  }
+
+  function renderRanking(){
+    const tbody = document.querySelector('#tblRanking tbody');
+    const rows = groupByHotel(filtered);
+    tbody.innerHTML = rows.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.Hotel)}</td><td>${r.RN.toLocaleString('es-ES')}</td><td>${r.PAX.toLocaleString('es-ES')}</td><td>${(r.PAX/(r.RN||1)).toFixed(2)}</td></tr>`).join('');
+  }
+
+  function downloadCSV(){
+    const rows = filtered.map(r=>({Mes:r.Month_Name, Hotel:r.Complejo, RN:r.RN, PAX:r.PAX, PAX_por_RN: (r.PAX/(r.RN||1)).toFixed(2)}));
+    const header = Object.keys(rows[0]||{Mes:'',Hotel:'',RN:'',PAX:'',PAX_por_RN:''}).join(',');
+    const body = rows.map(r=>Object.values(r).join(',')).join('\n');
+    const blob = new Blob([header+'\n'+body], {type:'text/csv;charset=utf-8;'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'ocupaciones_filtrado.csv'; a.click();
+  }
+
+  function downloadXLSX(){
+    const rows = filtered.map(r=>({Mes:r.Month_Name, Hotel:r.Complejo, RN:r.RN, PAX:r.PAX, PAX_por_RN: Number((r.PAX/(r.RN||1)).toFixed(2))}));
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, 'Filtrado');
+    XLSX.writeFile(wb, 'ocupaciones_filtrado.xlsx');
+  }
+
+  function escapeHtml(s){ return s.replace(/[&<>\"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;','\\'':'&#39;'}[c])); }
+
+  // UX: si el usuario pega accidentalmente un CSV
+  window.addEventListener('paste', (e)=>{
+    const text = (e.clipboardData || window.clipboardData).getData('text');
+    if(text && text.includes(',')){
+      try{
+        const lines = text.trim().split(/\r?\n/);
+        const header = lines[0].split(',');
+        const rows = lines.slice(1).map(l=>{
+          const vals = l.split(','); const obj={}; header.forEach((h,i)=>obj[h.trim()] = vals[i]); return obj;
+        });
+        ingest(rows);
+      }catch(_){/* nada */}
+    }
+  });
 </script>
-
 </body>
 </html>
+``
