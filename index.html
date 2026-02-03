@@ -102,7 +102,139 @@
             <option value="0.68">Gas forzado alta capacidad – 68%</option>
             <option value="0.72">Gas forzado baja capacidad – 72%</option>
             <option value="0.85">Gas condensación ≤1998 – 85%</option>
+            <option value="0.69">Gas ≥1998 piloto – 69%</option>
+            <option value="0.73">Gas ≥1998 automático – 73%</option>
+            <option value="0.79">Gas ≥1998 condensación – 79%</option>
+            <option value="0.65">Gasóleo ≤1985 – 65%</option>
+            <option value="0.70">Gasóleo 1985–1997 – 70%</option>
+            <option value="0.79">Gasóleo ≥1998 – 79%</option>
+            <option value="0.83">Gasóleo condensación – 83%</option>
+            <option value="0.55">Biomasa manual – 55%</option>
+            <option value="0.60">Biomasa manual calefactado – 60%</option>
+            <option value="0.60">Biomasa automática – 60%</option>
+            <option value="0.65">Biomasa autom. calefactado – 65%</option>
+        </select>
+    </div>
 
+    <!-- BOMBA DE CALOR -->
+    <div class="card">
+        <h2>2. Bomba de Calor Nueva</h2>
+
+        <div class="flex">
+            <div class="col">
+                <label>SCOP calefacción</label>
+                <input id="scop" type="number" step="0.01">
+            </div>
+            <div class="col">
+                <label>SCOP ACS (SCOP DHW)</label>
+                <input id="scopdhw" type="number" step="0.01">
+            </div>
+            <div class="col">
+                <label>SCOP piscina CAP</label>
+                <input id="scopcap" type="number" step="0.01">
+            </div>
+        </div>
+    </div>
+
+    <!-- CALEFACCIÓN -->
+    <div class="card">
+        <h2>3. Calefacción (AEC)</h2>
+        <div class="flex">
+            <div class="col">
+                <label>Demanda calefacción DC (kWh/año·m²)</label>
+                <input id="dc" type="number">
+            </div>
+            <div class="col">
+                <label>Superficie útil S (m²)</label>
+                <input id="superf" type="number">
+            </div>
+            <div class="col">
+                <label>FP calefacción</label>
+                <input id="fp_cal" type="number" value="1" step="0.01">
+            </div>
+        </div>
+    </div>
+
+    <!-- ACS -->
+    <div class="card">
+        <h2>4. Agua Caliente Sanitaria (AE_ACS)</h2>
+
+        <div class="flex">
+            <div class="col">
+                <label>Demanda ACS (kWh/año)</label>
+                <input id="dacs" type="number">
+            </div>
+            <div class="col">
+                <label>FP ACS</label>
+                <input id="fp_acs" type="number" step="0.01" value="1">
+            </div>
+            <div class="col"></div>
+        </div>
+    </div>
+
+    <!-- PISCINA -->
+    <div class="card">
+        <h2>5. Piscina CAP (AE_CAP)</h2>
+
+        <div class="flex">
+            <div class="col">
+                <label>Demanda CAP (kWh/año)</label>
+                <input id="dcap" type="number">
+            </div>
+            <div class="col">
+                <label>FP piscina</label>
+                <input id="fp_cap" type="number" step="0.01" value="1">
+            </div>
+            <div class="col"></div>
+        </div>
+    </div>
+
+    <!-- BOTÓN -->
+    <div class="card">
+        <button onclick="calcular()">Calcular Ahorro Total</button>
+
+        <div id="resultado" class="resultado" style="display:none;"></div>
+    </div>
+
+</div>
+
+<script>
+function calcular() {
+
+    const ηi = parseFloat(document.getElementById("rendCaldera").value);
+
+    const SCOP = parseFloat(document.getElementById("scop").value);
+    const SCOP_DHW = parseFloat(document.getElementById("scopdhw").value);
+    const SCOP_CAP = parseFloat(document.getElementById("scopcap").value);
+
+    const DC = parseFloat(document.getElementById("dc").value);
+    const S  = parseFloat(document.getElementById("superf").value);
+    const FP_CAL = parseFloat(document.getElementById("fp_cal").value);
+
+    const DACS = parseFloat(document.getElementById("dacs").value);
+    const FP_ACS = parseFloat(document.getElementById("fp_acs").value);
+
+    const DCAP = parseFloat(document.getElementById("dcap").value);
+    const FP_CAP = parseFloat(document.getElementById("fp_cap").value);
+
+    // F1 se considera = 1 según TER100
+    const AEC = (ηi - (1/SCOP)) * DC * S * FP_CAL;
+    const AE_ACS = (ηi - (1/SCOP_DHW)) * DACS * FP_ACS;
+    const AE_CAP = (ηi - (1/SCOP_CAP)) * DCAP * FP_CAP;
+
+    const AETOTAL = AEC + AE_ACS + AE_CAP;
+
+    document.getElementById("resultado").style.display = "block";
+    document.getElementById("resultado").innerHTML =
+        `<strong>AEC (Calefacción):</strong> ${AEC.toFixed(2)} kWh/año<br>
+         <strong>AE_ACS:</strong> ${AE_ACS.toFixed(2)} kWh/año<br>
+         <strong>AE_CAP:</strong> ${AE_CAP.toFixed(2)} kWh/año<br><br>
+         <strong style="font-size:20px;">Ahorro TOTAL:</strong> ${AETOTAL.toFixed(2)} kWh/año`;
+}
+</script>
+
+</body>
+</html>
 
 <style>
     body {
