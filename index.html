@@ -4,7 +4,12 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Dashboard de Ocupaciones – RN & PAX</title>
-<link rel="preconnect" href="https://cdn.jsdelivr#0c2b4b; --azul-suave:#1c3f63; --dorado:#c9a063; --bg:#f5f6fa; --card:#ffffff; }
+
+<!-- Preconnect correcto -->
+https://cdn.jsdelivr.net
+
+<style>
+  :root{ --azul:#0c2b4b; --azul-suave:#1c3f63; --dorado:#c9a063; --bg:#f5f6fa; --card:#ffffff; }
   *{box-sizing:border-box}
   body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:#233}
   header{background:var(--azul);color:#fff;padding:22px 16px}
@@ -42,6 +47,7 @@
 </header>
 
 <div class="wrap">
+
   <!-- ESTADO -->
   <div class="card">
     <div id="status" class="status">Inicializando…</div>
@@ -108,12 +114,10 @@
 </div>
 
 <!-- Librerías con fallback -->
-<script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsxt>
-<script defer src="https://cdn.jsdelivr.net/npm/chartt.umd.min.js</script>
-
-<script>
+<script defer src="https://cdnlsx@0.18.5/dist/xlsx.full.min.js</script>
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"
+       ga fallback si la primera CDN falla
   function fallbackLib(which){
-    // Carga fallback si la primera CDN falla
     const s = document.createElement('script');
     s.defer = true;
     s.src = which === 'xlsx'
@@ -155,7 +159,7 @@
     }catch(err){
       console.error(err);
       setStatus('No se pudo cargar el Excel. Cargando dataset de demostración para verificar la UI…', true);
-      // DEMO: para que la interfaz funcione aunque el Excel falle
+      // DEMO: para verificar UI aunque falle el Excel
       raw = normalize([
         {Month_Name:'Enero',   Complejo:'Hotel Alfa', RN:1200, PAX:2400},
         {Month_Name:'Enero',   Complejo:'Hotel Beta', RN:900,  PAX:1600},
@@ -176,30 +180,28 @@
       (function waitLibs(){
         const ok = (window.XLSX && window.Chart);
         if(ok) return resolve();
-        if(Date.now() - started > 8000) return reject(new Error('Timeout cargando librerías (XLSX/Chart).'));
+        if(Date.now() - started > 12000) return reject(new Error('Timeout cargando librerías (XLSX/Chart).'));
         setTimeout(waitLibs, 150);
       })();
     });
   }
 
-
+  // —— CARGA EXCEL desde varias rutas (Pages + RAW) ——
   async function loadExcelFromRepo(){
-    // Intenta varias rutas en GitHub Pages + RAW de GitHub
     const basePath = location.pathname.endsWith('/') ? location.pathname : location.pathname.replace(/[^/]+$/, '/');
 
     // Deducción owner/repo a partir de https://{owner}.github.io/{repo}/...
-    const owner = (location.hostname.split('.')[0] || '').trim();
+    const hostParts = location.hostname.split('.');
+    const owner = (hostParts[0] || '').trim();
     const repo  = (location.pathname.split('/').filter(Boolean)[0] || '').trim();
 
-    // Candidatas locales (mismo directorio que index.html)
     const localCandidates = [
       `${basePath}OCUPACIONES.xlsx`,
       `./OCUPACIONES.xlsx`,
-      `/OCUPACIONES.xlsx` // por si publicas en raíz
+      `/OCUPACIONES.xlsx`
     ];
 
-    // Candidatas RAW (por si Pages sirve desde /docs o branch distinto)
-    const rawCandidates = owner && repo ? [
+    const rawCandidates = (owner && repo) ? [
       `https://raw.githubusercontent.com/${owner}/${repo}/main/OCUPACIONES.xlsx`,
       `https://raw.githubusercontent.com/${owner}/${repo}/gh-pages/OCUPACIONES.xlsx`,
       `https://raw.githubusercontent.com/${owner}/${repo}/main/docs/OCUPACIONES.xlsx`,
@@ -214,12 +216,11 @@
         console.log('[fetch]', url);
         const res = await fetch(url, {cache:'no-store'});
         if(!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-
         const ab = await res.arrayBuffer();
         const wb = XLSX.read(ab, {type:'array'});
         const sh = wb.Sheets[wb.SheetNames[0]];
         const json = XLSX.utils.sheet_to_json(sh, {defval:null});
-        return json; // ← ¡éxito!
+        return json;
       }catch(e){
         lastErr = e; console.warn('[fallo]', url, e);
       }
@@ -227,16 +228,13 @@
     throw lastErr || new Error('No se pudo localizar/leer OCUPACIONES.xlsx en ninguna ruta candidata.');
   }
 
-
-
-
- 
+  // Normalización de filas
   function normalize(rows){
     return rows.map(r => ({
       Month_Name: String(r['Month_Name'] ?? r['Mes'] ?? r['month'] ?? '').trim(),
       Complejo:   String(r['Complejo']   ?? r['Hotel'] ?? r['Property'] ?? '').trim(),
-      RN:   Number(r['RN']   ?? r['RN Totales'] ?? r['RoomNights'] ?? 0) || 0,
-      PAX:  Number(r['PAX']  ?? r['Pax']        ?? r['Guests']     ?? 0) || 0
+      RN:  Number(r['RN']  ?? r['RN Totales'] ?? r['RoomNights'] ?? 0) || 0,
+      PAX: Number(r['PAX'] ?? r['Pax']        ?? r['Guests']     ?? 0) || 0
     })).filter(r => r.Month_Name && r.Complejo);
   }
 
@@ -269,7 +267,7 @@
       (hoteles.length ? hoteles.includes(r.Complejo) : true)
     );
 
-    filtered = data; // para exportaciones
+    filtered = data;
     renderChips(meses, hoteles);
     updateKPIs(data);
     updateCharts(data);
@@ -388,7 +386,7 @@
   }
 
   // Utilidad
-  function escapeHtml(s){ return String(s||'').replace(/[&<>\"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;','\\'':'&#39;'}[c])); }
+  function escapeHtml(s){ return String(s||'').replace(/[&<>\"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 </script>
 </body>
 </html>
